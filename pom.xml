@@ -344,7 +344,6 @@
 		<junit.version>4.7</junit.version>
 		<slf4j-log4j12.version>1.7.7</slf4j-log4j12.version>
 		<mockito-core.version>1.8.0</mockito-core.version>
-		<jetty.version>5.1.10</jetty.version>
 		<servlet-api.version>2.5</servlet-api.version>
 
 		<!-- Maven Plugin Dependencies -->
@@ -417,20 +416,10 @@
 		</dependency>
 
 		<dependency>
-			<groupId>jetty</groupId>
-			<artifactId>jetty</artifactId>
-			<!-- we'd like to use 6.0.2, but the version in central is missing the 
-				pom -->
-			<version>${jetty.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Provided dependencies -->
-		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<version>${servlet-api.version}</version>
-			<scope>provided</scope>
+			<scope>test</scope>
 		</dependency>
 
 	</dependencies>
