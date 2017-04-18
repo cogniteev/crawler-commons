@@ -22,8 +22,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
 
@@ -404,6 +408,57 @@ public class SiteMapParserTest {
         assertEquals(1, smi.getSitemaps().size());
     }
 
+    @Test
+    public void testVideosSitemap() throws UnknownFormatException, IOException, MalformedURLException {
+        SiteMapParser parser = new SiteMapParser();
+        String contentType = "text/xml";
+        byte[] content = getResourceAsBytes("src/test/resources/sitemaps/sitemap-videos.xml");
+
+        URL url = new URL("http://www.example.com/sitemap-video.xml");
+        AbstractSiteMap asm = parser.parseSiteMap(contentType, content, url);
+        assertEquals(false, asm.isIndex());
+        assertEquals(true, asm instanceof SiteMap);
+        SiteMap sm = (SiteMap) asm;
+        assertEquals(1, sm.getSiteMapUrls().size());
+        VideoAttributes expectedVideoAttributes = new VideoAttributes(
+            new URL("http://www.example.com/thumbs/123.jpg"),
+            "Grilling steaks for summer",
+            "Alkis shows you how to get perfectly done steaks every\n\t\t\t\ttime",
+            new URL("http://www.example.com/video123.flv"),
+            new URL("http://www.example.com/videoplayer.swf?video=123"));
+        expectedVideoAttributes.setDuration(600);
+        Calendar expectedExpirationDate = Calendar.getInstance();
+        expectedExpirationDate.set(2009,10,05,12,20,30);
+        expectedExpirationDate.set(Calendar.MILLISECOND, 0);
+        expectedVideoAttributes.setExpirationDate(expectedExpirationDate.getTime());
+        Calendar expectedPublicationDate = Calendar.getInstance();
+        expectedPublicationDate.set(2007, 10, 05, 12, 20, 30);
+        expectedPublicationDate.set(Calendar.MILLISECOND, 0);
+        expectedVideoAttributes.setPublicationDate(expectedPublicationDate.getTime());
+        expectedVideoAttributes.setRating(4.2f);
+        expectedVideoAttributes.setViewCount(12345);
+        expectedVideoAttributes.setFamilyFriendly(true);
+        expectedVideoAttributes.setTags(new String[] {"sample_tag1", "sample_tag2"});
+        expectedVideoAttributes.setAllowedCountries(new String[]{"IE", "GB", "US", "CA"});
+        expectedVideoAttributes.setGalleryLoc(new URL("http://cooking.example.com"));
+        expectedVideoAttributes.setGalleryTitle("Cooking Videos");
+        expectedVideoAttributes.setPrices(new VideoAttributes.VideoPrice[]{
+            new VideoAttributes.VideoPrice("EUR", 1.99f, VideoAttributes.VideoPriceType.own)
+        });
+        expectedVideoAttributes.setRequiresSubscription(true);
+        expectedVideoAttributes.setUploader("GrillyMcGrillerson");
+        expectedVideoAttributes.setUploaderInfo(new URL("http://www.example.com/users/grillymcgrillerson"));
+        expectedVideoAttributes.setLive(false);
+        Collection<SiteMapURL> expected = Collections.singletonList(new SiteMapURL(
+            "http://www.example.com/videos/some_video_landing_page.html",
+            null,
+            null,
+            null,
+            true,
+            null,
+            new VideoAttributes[]{expectedVideoAttributes}, null, null));
+        assertEquals(expected, sm.getSiteMapUrls());
+    }
     /**
      * Returns a good simple default XML sitemap as a byte array
      */

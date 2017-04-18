@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
@@ -39,8 +40,6 @@ public class SiteMapURL {
     public enum ChangeFrequency {
         ALWAYS, HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY, NEVER
     }
-
-    ;
 
     /**
      * URL found in Sitemap (required)
@@ -68,6 +67,30 @@ public class SiteMapURL {
      */
     private boolean valid;
 
+    public ImageAttributes[] getImages() {
+        return images;
+    }
+
+    /**
+     * location's images attributes
+     */
+    private ImageAttributes[] images;
+
+    /**
+     * location's links attributes
+     */
+    private LinkAttributes[] links;
+
+    /**
+     * location's news attributes
+     */
+    private NewsAttributes news;
+
+    /**
+     * location'  videos attributes
+     */
+    private VideoAttributes[] videos;
+
     public SiteMapURL(String url, boolean valid) {
         setUrl(url);
         setValid(valid);
@@ -91,6 +114,19 @@ public class SiteMapURL {
         setChangeFrequency(changeFreq);
         setPriority(priority);
     }
+
+    public SiteMapURL(String url, String lastMod, String changeFreq, String priority, boolean valid,
+                      ImageAttributes[] images, VideoAttributes[] videos, LinkAttributes[] links, NewsAttributes news) {
+        this(url, valid);
+        setLastModified(lastMod);
+        setChangeFrequency(changeFreq);
+        setPriority(priority);
+        setImages(images);
+        setVideos(videos);
+        setLinks(links);
+        setNews(news);
+    }
+
 
     /**
      * Return the URL.
@@ -278,6 +314,63 @@ public class SiteMapURL {
         return valid;
     }
 
+
+    /**
+     * Sets images from google image extension
+     * @param images
+     */
+    public void setImages(ImageAttributes[] images) {
+        this.images = images;
+    }
+
+    /**
+     * Get links from links extension
+     * @return links attributes
+     */
+    public LinkAttributes[] getLinks() {
+        return links;
+    }
+
+    /**
+     * Sets links attributes from links extension
+     * @param links
+     */
+    public void setLinks(LinkAttributes[] links) {
+        this.links = links;
+    }
+
+    /**
+     * Get news attributes from google news extension
+     * @return
+     */
+    public NewsAttributes getNews() {
+        return news;
+    }
+
+    /**
+     * Set news attributes from google news extension
+     * @param news
+     */
+    public void setNews(NewsAttributes news) {
+        this.news = news;
+    }
+
+    /**
+     * Get videos attributes from google video extension
+     * @return
+     */
+    public VideoAttributes[] getVideos() {
+        return videos;
+    }
+
+    /**
+     * Set videos attributes from google vido extension
+     * @param videos
+     */
+    public void setVideos(VideoAttributes[] videos) {
+        this.videos = videos;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -289,6 +382,11 @@ public class SiteMapURL {
 
         if (!url.equals(that.url))
             return false;
+
+        // Fixme: compare extensions data ?
+        if (!Arrays.deepEquals(videos, that.videos)) {
+            return false;
+        }
 
         return true;
     }

@@ -355,6 +355,7 @@ public class SiteMapParser {
 
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
             DocumentBuilder db = dbf.newDocumentBuilder();
             db.setErrorHandler(new ErrorHandler() {
                 public void warning(SAXParseException e) throws SAXException {
@@ -435,8 +436,13 @@ public class SiteMapParser {
                 String changeFreq = getElementValue(elem, "changefreq");
                 String priority = getElementValue(elem, "priority");
                 String loc = getElementValue(elem, "loc");
-
-                addUrlIntoSitemap(loc, sitemap, lastMod, changeFreq, priority, i);
+                // parse sitemap extensions
+                final ImageAttributes[] images = SiteMapExtensionParser.parseImages(elem);
+                final VideoAttributes[] videos = SiteMapExtensionParser.parseVideos(elem);
+                final LinkAttributes[] links = SiteMapExtensionParser.parseLinks(elem);
+                final NewsAttributes news = SiteMapExtensionParser.parseNews(elem);
+                addUrlIntoSitemap(loc, sitemap, lastMod, changeFreq, priority, i,
+                    images, videos, links, news);
             }
         }
 
@@ -762,6 +768,43 @@ public class SiteMapParser {
 
             if (valid || !strict) {
                 SiteMapURL sUrl = new SiteMapURL(url.toString(), lastMod, changeFreq, priority, valid);
+                siteMap.addSiteMapUrl(sUrl);
+                LOG.debug("  {}. {}", urlIndex + 1, sUrl);
+            } else {
+                LOG.warn("URL: {} is excluded from the sitemap as it is not a valid url = not under the base url: {}", url.toExternalForm(), siteMap.getBaseUrl());
+            }
+        } catch (MalformedURLException e) {
+            LOG.warn("Bad url: [{}]", urlStr);
+            LOG.trace("Can't create a sitemap entry with a bad URL", e);
+        }
+    }
+
+    /**
+     * Adds the given URL to the given sitemap while showing the relevant logs
+     *
+     * @param urlStr
+     *            an URL string to add to the
+     *            {@link crawlercommons.sitemaps.SiteMap}
+     * @param siteMap
+     *            the sitemap to add URL(s) to
+     * @param lastMod
+     *            last time the {@link crawlercommons.sitemaps.SiteMapURL} was
+     *            modified
+     * @param changeFreq
+     *            the {@link crawlercommons.sitemaps.SiteMapURL} change frquency
+     * @param priority
+     *            priority of this {@link crawlercommons.sitemaps.SiteMapURL}
+     * @param urlIndex
+     *            index position to which this entry has been added
+     */
+    protected void addUrlIntoSitemap(String urlStr, SiteMap siteMap, String lastMod, String changeFreq, String priority, int urlIndex,
+                                     ImageAttributes[] images, VideoAttributes[] videos, LinkAttributes[] links, NewsAttributes news) {
+        try {
+            URL url = new URL(urlStr); // Checking the URL
+            boolean valid = urlIsValid(siteMap.getBaseUrl(), url.toString());
+
+            if (valid || !strict) {
+                SiteMapURL sUrl = new SiteMapURL(url.toString(), lastMod, changeFreq, priority, valid, images, videos, links, news);
                 siteMap.addSiteMapUrl(sUrl);
                 LOG.debug("  {}. {}", urlIndex + 1, sUrl);
             } else {
