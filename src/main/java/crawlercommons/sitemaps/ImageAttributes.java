@@ -7,7 +7,7 @@ import java.net.URL;
  */
 public class ImageAttributes {
     /**
-     * Image location attribute found under image/log (required)
+     * Image location attribute found under image/loc (required)
      */
     private URL loc;
 
@@ -30,4 +30,99 @@ public class ImageAttributes {
      * Image license attribute found under image/license (optional)
      */
     private URL license;
+
+
+    public URL getLoc() {
+        return loc;
+    }
+
+    public void setLoc(URL loc) {
+        this.loc = loc;
+    }
+
+    public String getCaption() {
+        return caption;
+    }
+
+    public void setCaption(String caption) {
+        this.caption = caption;
+    }
+
+    public String getGeoLocation() {
+        return geoLocation;
+    }
+
+    public void setGeoLocation(String geoLocation) {
+        this.geoLocation = geoLocation;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public URL getLicense() {
+        return license;
+    }
+
+    public void setLicense(URL license) {
+        this.license = license;
+    }
+
+    private ImageAttributes(){}
+
+    public ImageAttributes(URL loc) {
+        this.loc = loc;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
+        if (other instanceof ImageAttributes) {
+            ImageAttributes that = (ImageAttributes)other;
+            if (loc == null) {
+                if (that.loc != null) {
+                    return false;
+                }
+            } else if (!loc.equals(that.loc)) {
+                return false;
+            }
+            if (caption == null) {
+                if (that.caption != null) {
+                    return false;
+                }
+            } else if (!caption.equals(that.caption)) {
+                return false;
+            }
+            if (geoLocation == null) {
+                if (that.geoLocation != null) {
+                    return false;
+                }
+            } else if (!geoLocation.equals(that.geoLocation)) {
+                return false;
+            }
+            if (title == null) {
+                if (that.title != null) {
+                    return false;
+                }
+            } else if (!title.equals(that.title)) {
+                return false;
+            }
+            if (license == null) {
+                if (that.license != null) {
+                    return false;
+                }
+            } else if (!license.equals(that.license)) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        return true;
+    }
 }

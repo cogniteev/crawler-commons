@@ -23,12 +23,17 @@ public class SiteMapExtensionParser {
     public static final String NEWS_NS = "http://www.google.com/schemas/sitemap-news/0.9";
 
     public static final ImageAttributes[] parseImages(final Element element) {
-        List<ImageAttributes> images = null;
+        ImageAttributes[] images = null;
 
-        if (images != null) {
-            return images.toArray(new ImageAttributes[images.size()]);
+        NodeList imageNodes = element.getElementsByTagNameNS(IMAGES_NS, "image");
+
+        if (imageNodes.getLength() > 0) {
+            images = new ImageAttributes[imageNodes.getLength()];
+            for (int i=0; i<imageNodes.getLength(); i++) {
+                images[i] = parseImageNode(imageNodes.item(i));
+            }
         }
-        return null;
+        return images;
     }
 
     public static final LinkAttributes[] parseLinks(final Element element) {
@@ -56,6 +61,24 @@ public class SiteMapExtensionParser {
         NewsAttributes news = null;
 
         return news;
+    }
+
+
+    private static final ImageAttributes parseImageNode(final Node node) {
+        final Element elem = (Element) node;
+
+        final URL loc = getElementURLValue(elem, IMAGES_NS, "loc");
+        final String caption = getElementValue(elem, IMAGES_NS, "caption");
+        final String geoLocation = getElementValue(elem, IMAGES_NS, "geo_location");
+        final String title = getElementValue(elem, IMAGES_NS, "title");
+        final URL license = getElementURLValue(elem, IMAGES_NS, "license");
+        final ImageAttributes imageAttributes = new ImageAttributes(loc);
+        imageAttributes.setCaption(caption);
+        imageAttributes.setGeoLocation(geoLocation);
+        imageAttributes.setTitle(title);
+        imageAttributes.setLicense(license);
+
+        return imageAttributes;
     }
 
 

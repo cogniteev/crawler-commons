@@ -383,8 +383,23 @@ public class SiteMapURL {
         if (!url.equals(that.url))
             return false;
 
-        // Fixme: compare extensions data ?
         if (!Arrays.deepEquals(videos, that.videos)) {
+            return false;
+        }
+
+        if (!Arrays.deepEquals(images, that.images)) {
+            return false;
+        }
+
+        if (!Arrays.deepEquals(links, that.links)) {
+            return false;
+        }
+
+        if (news == null) {
+            if (that.news != null) {
+                return false;
+            }
+        } else if (!news.equals(that.news)) {
             return false;
         }
 

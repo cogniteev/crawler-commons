@@ -16,7 +16,15 @@
 
 package crawlercommons.sitemaps;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.commons.io.IOUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,17 +39,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
 
-import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(JUnit4.class)
 public class SiteMapParserTest {
@@ -409,7 +411,7 @@ public class SiteMapParserTest {
     }
 
     @Test
-    public void testVideosSitemap() throws UnknownFormatException, IOException, MalformedURLException {
+    public void testVideosSitemap() throws UnknownFormatException, IOException {
         SiteMapParser parser = new SiteMapParser();
         String contentType = "text/xml";
         byte[] content = getResourceAsBytes("src/test/resources/sitemaps/sitemap-videos.xml");
@@ -459,6 +461,37 @@ public class SiteMapParserTest {
             new VideoAttributes[]{expectedVideoAttributes}, null, null));
         assertEquals(expected, sm.getSiteMapUrls());
     }
+
+
+    @Test
+    public void testImageSitemap() throws UnknownFormatException, IOException {
+        SiteMapParser parser = new SiteMapParser();
+        String contentType = "text/xml";
+        byte[] content = getResourceAsBytes("src/test/resources/sitemaps/sitemap-images.xml");
+
+        URL url = new URL("http://www.example.com/sitemap-images.xml");
+        AbstractSiteMap asm = parser.parseSiteMap(contentType, content, url);
+        assertEquals(false, asm.isIndex());
+        assertEquals(true, asm instanceof SiteMap);
+        SiteMap sm = (SiteMap) asm;
+        assertEquals(1, sm.getSiteMapUrls().size());
+        ImageAttributes imageAttributes1 = new ImageAttributes(new URL("http://example.com/image.jpg"));
+        ImageAttributes imageAttributes2 = new ImageAttributes(new URL("http://example.com/photo.jpg"));
+        imageAttributes2.setCaption("This is the caption.");
+        imageAttributes2.setGeoLocation("Limerick, Ireland");
+        imageAttributes2.setTitle("Example photo shot in Limerick, Ireland");
+        imageAttributes2.setLicense(new URL("https://creativecommons.org/licenses/by/4.0/legalcode"));
+        Collection<SiteMapURL> expected = Collections.singletonList(new SiteMapURL(
+            "http://www.example.com/images/some_image_landing_page.html",
+            null,
+            null,
+            null,
+            true,
+            new ImageAttributes[]{imageAttributes1, imageAttributes2},
+            null, null, null));
+        assertEquals(expected, sm.getSiteMapUrls());
+    }
+
     /**
      * Returns a good simple default XML sitemap as a byte array
      */
