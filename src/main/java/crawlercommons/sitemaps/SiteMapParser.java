@@ -796,6 +796,14 @@ public class SiteMapParser {
      *            priority of this {@link crawlercommons.sitemaps.SiteMapURL}
      * @param urlIndex
      *            index position to which this entry has been added
+     * @param images
+     *            images attributes from Google's image extension to the sitemap protocol
+     * @param videos
+     *            videos attributes from Google's video extension to the sitemap protocol
+     * @param links
+     *            links attributes from Google's links extension to the sitemap protocol
+     * @param news
+     *            news attributes from Google's news extension to the sitemap protocol
      */
     protected void addUrlIntoSitemap(String urlStr, SiteMap siteMap, String lastMod, String changeFreq, String priority, int urlIndex,
                                      ImageAttributes[] images, VideoAttributes[] videos, LinkAttributes[] links, NewsAttributes news) {
