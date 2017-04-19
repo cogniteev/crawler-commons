@@ -33,10 +33,12 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -489,6 +491,55 @@ public class SiteMapParserTest {
             true,
             new ImageAttributes[]{imageAttributes1, imageAttributes2},
             null, null, null));
+        assertEquals(expected, sm.getSiteMapUrls());
+    }
+
+
+    @Test
+    public void testXHTMLLinksSitemap() throws UnknownFormatException, IOException {
+        SiteMapParser parser = new SiteMapParser();
+        String contentType = "text/xml";
+        byte[] content = getResourceAsBytes("src/test/resources/sitemaps/sitemap-links.xml");
+
+        URL url = new URL("http://www.example.com/sitemap-links.xml");
+        AbstractSiteMap asm = parser.parseSiteMap(contentType, content, url);
+        assertEquals(false, asm.isIndex());
+        assertEquals(true, asm instanceof SiteMap);
+        SiteMap sm = (SiteMap) asm;
+        assertEquals(3, sm.getSiteMapUrls().size());
+        // all three pages share the same links attributes
+        LinkAttributes[] linkAttributes = new LinkAttributes[] {
+            new LinkAttributes(new URL("http://www.example.com/deutsch/")),
+            new LinkAttributes(new URL("http://www.example.com/schweiz-deutsch/")),
+            new LinkAttributes(new URL("http://www.example.com/english/"))
+        };
+        linkAttributes[0].setParams(new HashMap<String, String>(){{
+            put("rel", "alternate");
+            put("hreflang", "de");
+        }});
+        linkAttributes[1].setParams(new HashMap<String, String>(){{
+            put("rel", "alternate");
+            put("hreflang", "de-ch");
+        }});
+        linkAttributes[2].setParams(new HashMap<String, String>(){{
+            put("rel", "alternate");
+            put("hreflang", "en");
+        }});
+
+        Collection<SiteMapURL> expected = Arrays.asList(
+            new SiteMapURL("http://www.example.com/english/",
+                null, null, null, true, null, null,
+                linkAttributes,
+                null),
+            new SiteMapURL("http://www.example.com/deutsch/",
+                null, null, null, true, null, null,
+                linkAttributes,
+                null),
+            new SiteMapURL("http://www.example.com/schweiz-deutsch/",
+                null, null, null, true, null, null,
+                linkAttributes,
+                null)
+        );
         assertEquals(expected, sm.getSiteMapUrls());
     }
 

@@ -3,13 +3,16 @@ package crawlercommons.sitemaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by tanguy on 18/04/2017.
@@ -37,12 +40,16 @@ public class SiteMapExtensionParser {
     }
 
     public static final LinkAttributes[] parseLinks(final Element element) {
-        List<LinkAttributes> links = null;
+        LinkAttributes[] links = null;
 
-        if (links != null) {
-            return links.toArray(new LinkAttributes[links.size()]);
+        NodeList linkNodes = element.getElementsByTagNameNS(LINKS_NS, "link");
+        if (linkNodes.getLength() > 0) {
+            links = new LinkAttributes[linkNodes.getLength()];
+            for (int i=0; i<linkNodes.getLength(); i++) {
+                links[i] = parseLinkNode(linkNodes.item(i));
+            }
         }
-        return null;
+        return links;
     }
 
     public static final VideoAttributes[] parseVideos(final Element element) {
@@ -59,10 +66,47 @@ public class SiteMapExtensionParser {
 
     public static final NewsAttributes parseNews(final Element element) {
         NewsAttributes news = null;
-
+        NodeList newsNodes = element.getElementsByTagNameNS(NEWS_NS, "news");
+        if (newsNodes.getLength() > 0) {
+            news = parseNewsNode(newsNodes.item(0));
+        }
         return news;
     }
 
+    private static NewsAttributes parseNewsNode(final Node node) {
+        // TODO
+        return new NewsAttributes();
+    }
+
+    private static LinkAttributes parseLinkNode(final Node node) {
+        final Element elem = (Element)node;
+        NamedNodeMap attributes = elem.getAttributes();
+        URL href = null;
+        Map<String, String> params = new HashMap<>(attributes.getLength()-1);
+        for (int i=0; i<attributes.getLength(); i++) {
+            final Node attribute = attributes.item(i);
+            final String name = attribute.getNodeName();
+            final String value = attribute.getNodeValue();
+            if ("href".equalsIgnoreCase(name)) {
+                if (value != null) {
+                    try {
+                        href = new URL(value);
+                    } catch (MalformedURLException e) {
+                        LOGGER.warn("Malformed URL in link href attribute: " + value);
+                    }
+                } else {
+                    LOGGER.warn("Unexpected null value for Link href attribute");
+                }
+            } else {
+                if (name != null && value != null) {
+                    params.put(name, value);
+                }
+            }
+        }
+        LinkAttributes linkAttributes = new LinkAttributes(href);
+        linkAttributes.setParams(params);
+        return linkAttributes;
+    }
 
     private static final ImageAttributes parseImageNode(final Node node) {
         final Element elem = (Element) node;
