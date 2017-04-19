@@ -1,5 +1,6 @@
 package crawlercommons.sitemaps;
 
+import com.sun.org.apache.bcel.internal.generic.NEW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
@@ -9,6 +10,7 @@ import org.w3c.dom.NodeList;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -74,8 +76,54 @@ public class SiteMapExtensionParser {
     }
 
     private static NewsAttributes parseNewsNode(final Node node) {
-        // TODO
-        return new NewsAttributes();
+        Element elem = (Element)node;
+
+        NodeList publicationNodes = ((Element) node).getElementsByTagNameNS(NEWS_NS, "publication");
+        String name = null;
+        String language = null;
+
+        if (publicationNodes.getLength() > 0) {
+            Element publication = (Element)publicationNodes.item(0);
+            name = getElementValue(publication, NEWS_NS, "name");
+            language = getElementValue(publication, NEWS_NS, "language");
+        }
+        String genresStr = getElementValue(elem, NEWS_NS, "genres");
+        NewsAttributes.NewsGenre[] genres = null;
+        if (genresStr != null) {
+            String[] genresList = genresStr.split(",");
+            List<NewsAttributes.NewsGenre> _genres = new ArrayList<>();
+            for (String genre : genresList) {
+                try {
+                    _genres.add(NewsAttributes.NewsGenre.valueOf(genre.trim()));
+                } catch (IllegalArgumentException e) {
+                    LOGGER.warn("Unsupported genre: " + genre);
+                }
+            }
+            genres = _genres.toArray(new NewsAttributes.NewsGenre[_genres.size()]);
+        }
+        Date publicationDate = getElementDateValue(elem, NEWS_NS, "publication_date");
+        String title = getElementValue(elem, NEWS_NS, "title");
+        String[] keywords = null;
+        String keywordsStr = getElementValue(elem, NEWS_NS, "keywords");
+        if (keywordsStr != null) {
+            keywords = keywordsStr.split(",");
+            for (int i=0; i<keywords.length; i++) {
+                keywords[i] = keywords[i].trim();
+            }
+        }
+        String stockTickersStr = getElementValue(elem, NEWS_NS, "stock_tickers");
+        String stockTickers[] = stockTickersStr.split(",", 5);
+        for (int i=0; i<stockTickers.length; i++) {
+            stockTickers[i] = stockTickers[i].trim();
+        }
+        if (stockTickers.length == 5 && stockTickers[4].indexOf(",") != -1) {
+            stockTickers[4] = stockTickers[4].substring(0, stockTickers[4].indexOf(","));
+        }
+        NewsAttributes newsAttributes = new NewsAttributes(name, language, publicationDate, title);
+        newsAttributes.setGenres(genres);
+        newsAttributes.setKeywords(keywords);
+        newsAttributes.setStockTickers(stockTickers);
+        return newsAttributes;
     }
 
     private static LinkAttributes parseLinkNode(final Node node) {

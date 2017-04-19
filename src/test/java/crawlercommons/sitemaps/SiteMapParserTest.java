@@ -543,6 +543,41 @@ public class SiteMapParserTest {
         assertEquals(expected, sm.getSiteMapUrls());
     }
 
+
+    @Test
+    public void testNewsSitemap() throws UnknownFormatException, IOException {
+        SiteMapParser parser = new SiteMapParser();
+        String contentType = "text/xml";
+        byte[] content = getResourceAsBytes("src/test/resources/sitemaps/sitemap-news.xml");
+
+        URL url = new URL("http://www.example.org/sitemap-news.xml");
+        AbstractSiteMap asm = parser.parseSiteMap(contentType, content, url);
+        assertEquals(false, asm.isIndex());
+        assertEquals(true, asm instanceof SiteMap);
+        SiteMap sm = (SiteMap) asm;
+        assertEquals(1, sm.getSiteMapUrls().size());
+        Calendar expectedPublicationDate = Calendar.getInstance();
+        expectedPublicationDate.set(2008,11,23);
+        expectedPublicationDate.set(Calendar.HOUR, 0);
+        expectedPublicationDate.set(Calendar.MINUTE, 0);
+        expectedPublicationDate.set(Calendar.SECOND, 0);
+        expectedPublicationDate.set(Calendar.MILLISECOND, 0);
+        NewsAttributes expectedNewsAttributes = new NewsAttributes("The Example Times", "en",
+            expectedPublicationDate.getTime(), "Companies A, B in Merger Talks");
+        expectedNewsAttributes.setKeywords(new String[]{"business", "merger", "acquisition", "A", "B"});
+        expectedNewsAttributes.setGenres(new NewsAttributes.NewsGenre[]{
+            NewsAttributes.NewsGenre.PressRelease,
+            NewsAttributes.NewsGenre.Blog
+        });
+        expectedNewsAttributes.setStockTickers(new String[] {"NASDAQ:A", "NASDAQ:B"});
+        Collection<SiteMapURL> expected = Collections.singletonList(new SiteMapURL(
+            "http://www.example.org/business/article55.html",
+            null, null, null, true, null, null, null,
+            expectedNewsAttributes));
+        assertEquals(expected, sm.getSiteMapUrls());
+    }
+
+
     /**
      * Returns a good simple default XML sitemap as a byte array
      */
