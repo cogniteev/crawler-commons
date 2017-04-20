@@ -24,6 +24,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * The SitemapUrl class represents a URL found in a Sitemap.
@@ -66,10 +67,6 @@ public class SiteMapURL {
      * http://www.sitemaps.org/protocol.html#location *
      */
     private boolean valid;
-
-    public ImageAttributes[] getImages() {
-        return images;
-    }
 
     /**
      * location's images attributes
@@ -314,6 +311,13 @@ public class SiteMapURL {
         return valid;
     }
 
+    /**
+     * Get images from images extension
+     * @return images attributes
+     */
+    public ImageAttributes[] getImages() {
+        return images;
+    }
 
     /**
      * Sets images from google image extension
@@ -373,42 +377,43 @@ public class SiteMapURL {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
         SiteMapURL that = (SiteMapURL) o;
-
-        if (!url.equals(that.url))
-            return false;
-
-        if (!Arrays.deepEquals(videos, that.videos)) {
+        if (!Objects.equals(url, that.url)) {
             return false;
         }
-
-        if (!Arrays.deepEquals(images, that.images)) {
+        if (!Objects.deepEquals(videos, that.videos)) {
             return false;
         }
-
-        if (!Arrays.deepEquals(links, that.links)) {
+        if (!Objects.deepEquals(images, that.images)) {
             return false;
         }
-
-        if (news == null) {
-            if (that.news != null) {
-                return false;
-            }
-        } else if (!news.equals(that.news)) {
+        if (!Objects.deepEquals(links, that.links)) {
             return false;
         }
-
+        if (!Objects.equals(news, that.news)) {
+            return false;
+        }
         return true;
     }
 
     @Override
     public int hashCode() {
-        return url.hashCode();
+        int result = 37;
+
+        result = 31*result + (url == null ? 0: url.hashCode());
+        result = 31*result + Arrays.hashCode(images);
+        result = 31*result + Arrays.hashCode(videos);
+        result = 31*result + Arrays.hashCode(links);
+        result = 31*result + (news == null ? 0 : news.hashCode());
+
+        return result;
     }
 
     @Override

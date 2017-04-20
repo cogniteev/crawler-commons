@@ -16,8 +16,8 @@
 package crawlercommons.sitemaps;
 
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * Data model for Google extension to the sitemap protocol regarding images indexing,
@@ -149,6 +149,11 @@ public class VideoAttributes {
      * whitelist of platforms filled if video/platform node has an attribute named relationship with a value of allow.
      */
     private String[] allowedPlatforms;
+
+    /**
+     * Video is a live stream found under video/live (optional)
+     */
+    private Boolean isLive;
 
     public URL getThumbnailLoc() {
         return thumbnailLoc;
@@ -342,11 +347,6 @@ public class VideoAttributes {
         isLive = live;
     }
 
-    /**
-     * Video is a live stream found under video/live (optional)
-     */
-    private Boolean isLive;
-
     public enum VideoPriceType { own, rent }
     public enum VideoPriceResolution { SD, HD }
 
@@ -446,153 +446,80 @@ public class VideoAttributes {
         if (other == null) {
             return false;
         }
-        if (other instanceof VideoAttributes) {
-            VideoAttributes that = (VideoAttributes)other;
-            if (thumbnailLoc == null) {
-                if (that.thumbnailLoc != null) {
-                    return false;
-                }
-            } else if (!thumbnailLoc.equals(that.thumbnailLoc)) {
-                return false;
-            }
-            if (title == null) {
-                if (that.title != null) {
-                    return false;
-                }
-            } else  if (!title.equals(that.title)) {
-                return false;
-            }
-            if (description == null) {
-                if (that.description != null) {
-                    return false;
-                }
-            } else  if (!description.equals(that.description)) {
-                return false;
-            }
-            if (contentLoc == null) {
-                if (that.contentLoc != null) {
-                    return false;
-                }
-            } else if (!contentLoc.equals(that.contentLoc)) {
-                return false;
-            }
-            if (playerLoc == null) {
-                if (that.playerLoc != null) {
-                    return false;
-                }
-            } else if (!playerLoc.equals(that.playerLoc)) {
-                return false;
-            }
-            if (duration == null) {
-                if (that.duration != null) {
-                    return false;
-                }
-            } else  if (!duration.equals(that.duration)) {
-                return false;
-            }
-            if (expirationDate == null) {
-                if (that.expirationDate != null) {
-                    return false;
-                }
-            } else if (!expirationDate.equals(that.expirationDate)) {
-                return false;
-            }
-            if (rating == null) {
-                if (that.rating != null) {
-                    return false;
-                }
-            } else if (!rating.equals(that.rating)) {
-                return false;
-            }
-            if (viewCount == null) {
-                if (that.viewCount != null) {
-                    return false;
-                }
-            } else if (!viewCount.equals(that.viewCount)) {
-                return false;
-            }
-            if (publicationDate == null) {
-                if (that.publicationDate != null) {
-                    return false;
-                }
-            } else  if (!publicationDate.equals(that.publicationDate)) {
-                return false;
-            }
-            if (familyFriendly == null) {
-                if (that.familyFriendly != null) {
-                    return false;
-                }
-            } else  if (!familyFriendly.equals(that.familyFriendly)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(tags, that.tags)) {
-                return false;
-            }
-            if (category == null) {
-                if(that.category != null) {
-                    return false;
-                }
-            } else if (!category.equals(that.category)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(restrictedCountries, that.restrictedCountries)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(allowedCountries, that.allowedCountries)) {
-                return false;
-            }
-            if (galleryLoc == null) {
-                if (that.galleryLoc != null) {
-                    return false;
-                }
-            } else if (!galleryLoc.equals(that.galleryLoc)) {
-                return false;
-            }
-            if (galleryTitle == null) {
-                if (that.galleryTitle != null) {
-                    return false;
-                }
-            } else if (!galleryTitle.equals(that.galleryTitle)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(prices, that.prices)) {
-                return false;
-            }
-            if (requiresSubscription == null) {
-                if (that.requiresSubscription != null) {
-                    return false;
-                }
-            } else if (!requiresSubscription.equals(that.requiresSubscription)) {
-                return false;
-            }
-            if (uploader == null) {
-                if (that.uploader != null) {
-                    return false;
-                }
-            } else if (!uploader.equals(that.uploader)) {
-                return false;
-            }
-            if (uploaderInfo == null) {
-                if (that.uploaderInfo != null) {
-                    return false;
-                }
-            } else if (!uploaderInfo.equals(that.uploaderInfo)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(allowedPlatforms, that.allowedPlatforms)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(restrictedPlatforms, that.restrictedPlatforms)) {
-                return false;
-            }
-            if (isLive == null) {
-                if (that.isLive != null) {
-                    return false;
-                }
-            } else if (!isLive.equals(that.isLive)) {
-                return false;
-            }
-        } else {
+        if (!(other instanceof VideoAttributes)) {
+            return false;
+        }
+        VideoAttributes that = (VideoAttributes)other;
+        if (!Objects.equals(thumbnailLoc, that.thumbnailLoc)) {
+            return false;
+        }
+        if (!Objects.equals(title, that.title)) {
+            return false;
+        }
+        if (!Objects.equals(description, that.description)) {
+            return false;
+        }
+        if (!Objects.equals(contentLoc, that.contentLoc)) {
+            return false;
+        }
+        if (!Objects.equals(playerLoc, that.playerLoc)) {
+            return false;
+        }
+        if (!Objects.equals(duration, that.duration)) {
+            return false;
+        }
+        if (!Objects.equals(expirationDate, that.expirationDate)) {
+            return false;
+        }
+        if (!Objects.equals(rating, that.rating)) {
+            return false;
+        }
+        if (!Objects.equals(viewCount, that.viewCount)) {
+            return false;
+        }
+        if (!Objects.equals(publicationDate, that.publicationDate)) {
+            return false;
+        }
+        if (!Objects.equals(familyFriendly, that.familyFriendly)) {
+            return false;
+        }
+        if (!Objects.deepEquals(tags, that.tags)) {
+            return false;
+        }
+        if (!Objects.equals(category, that.category)) {
+            return false;
+        }
+        if (!Objects.deepEquals(restrictedCountries, that.restrictedCountries)) {
+            return false;
+        }
+        if (!Objects.deepEquals(allowedCountries, that.allowedCountries)) {
+            return false;
+        }
+        if (!Objects.equals(galleryLoc, that.galleryLoc)) {
+            return false;
+        }
+        if (!Objects.equals(galleryTitle, that.galleryTitle)) {
+            return false;
+        }
+        if (!Objects.deepEquals(prices, that.prices)) {
+            return false;
+        }
+        if (!Objects.equals(requiresSubscription, that.requiresSubscription)) {
+            return false;
+        }
+        if (!Objects.equals(uploader, that.uploader)) {
+            return false;
+        }
+        if (!Objects.equals(uploaderInfo, that.uploaderInfo)) {
+            return false;
+        }
+        if (!Objects.deepEquals(allowedPlatforms, that.allowedPlatforms)) {
+            return false;
+        }
+        if (!Objects.deepEquals(restrictedPlatforms, that.restrictedPlatforms)) {
+            return false;
+        }
+        if (!Objects.equals(isLive, that.isLive)) {
             return false;
         }
         return true;

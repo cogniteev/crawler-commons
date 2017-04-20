@@ -17,6 +17,7 @@ package crawlercommons.sitemaps;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * Data model for Google's extension to the sitemap protocol regarding news indexing, as per
@@ -131,42 +132,43 @@ public class NewsAttributes {
         if (other == null) {
             return false;
         }
-        if (other instanceof NewsAttributes) {
-            NewsAttributes that = (NewsAttributes)other;
-            if (name == null) {
-                if (that.name != null) {
-                    return false;
-                }
-            } else if (!name.equals(that.name)) {
-                return false;
-            }
-            if (language == null) {
-                if (that.language != null) {
-                    return false;
-                }
-            } else if (!language.equals(that.language)) {
-                return false;
-            }
-            if (title == null) {
-                if (that.title != null) {
-                    return false;
-                }
-            } else if (!title.equals(that.title)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(keywords, that.keywords)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(genres, that.genres)) {
-                return false;
-            }
-            if (!Arrays.deepEquals(stockTickers, that.stockTickers)) {
-                return false;
-            }
-        } else {
+        if (!(other instanceof NewsAttributes)) {
+            return false;
+        }
+        NewsAttributes that = (NewsAttributes)other;
+        if (!Objects.equals(name, that.name)) {
+            return false;
+        }
+        if (!Objects.equals(language, that.language)) {
+            return false;
+        }
+        if (!Objects.equals(title, that.title)) {
+            return false;
+        }
+        if (!Objects.deepEquals(keywords, that.keywords)) {
+            return false;
+        }
+        if (!Objects.deepEquals(genres, that.genres)) {
+            return false;
+        }
+        if (!Objects.deepEquals(stockTickers, that.stockTickers)) {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 37;
+
+        result = 31*result + (name == null ? 0 : name.hashCode());
+        result = 31*result + (language == null ? 0 : language.hashCode());
+        result = 31*result + (title == null ? 0 : title.hashCode());
+        result = 31*result + Arrays.hashCode(keywords);
+        result = 31*result + Arrays.hashCode(genres);
+        result = 31*result + Arrays.hashCode(stockTickers);
+
+        return result;
     }
 
     public enum NewsGenre { Blog, OpEd, Opinion, PressRelease, Satire, UserGenerated }

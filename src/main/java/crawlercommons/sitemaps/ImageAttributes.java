@@ -16,6 +16,7 @@
 package crawlercommons.sitemaps;
 
 import java.net.URL;
+import java.util.Objects;
 
 /**
  * Data model for Google extension to the sitemap protocol regarding images indexing,
@@ -88,7 +89,8 @@ public class ImageAttributes {
         this.license = license;
     }
 
-    private ImageAttributes(){}
+    private ImageAttributes() {
+    }
 
     public ImageAttributes(URL loc) {
         this.loc = loc;
@@ -99,46 +101,37 @@ public class ImageAttributes {
         if (other == null) {
             return false;
         }
-        if (other instanceof ImageAttributes) {
-            ImageAttributes that = (ImageAttributes)other;
-            if (loc == null) {
-                if (that.loc != null) {
-                    return false;
-                }
-            } else if (!loc.equals(that.loc)) {
-                return false;
-            }
-            if (caption == null) {
-                if (that.caption != null) {
-                    return false;
-                }
-            } else if (!caption.equals(that.caption)) {
-                return false;
-            }
-            if (geoLocation == null) {
-                if (that.geoLocation != null) {
-                    return false;
-                }
-            } else if (!geoLocation.equals(that.geoLocation)) {
-                return false;
-            }
-            if (title == null) {
-                if (that.title != null) {
-                    return false;
-                }
-            } else if (!title.equals(that.title)) {
-                return false;
-            }
-            if (license == null) {
-                if (that.license != null) {
-                    return false;
-                }
-            } else if (!license.equals(that.license)) {
-                return false;
-            }
-        } else {
+        if (!(other instanceof ImageAttributes)) {
+            return false;
+        }
+        ImageAttributes that = (ImageAttributes) other;
+        if (!Objects.equals(loc, that.loc)) {
+            return false;
+        }
+        if (!Objects.equals(caption, that.caption)) {
+            return false;
+        }
+        if (!Objects.equals(geoLocation, that.geoLocation)) {
+            return false;
+        }
+        if (!Objects.equals(title, that.title)) {
+            return false;
+        }
+        if (!Objects.equals(license, that.license)) {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 37;
+
+        result = 31 * result + (loc == null ? 0 : loc.hashCode());
+        result = 31 * result + (caption == null ? 0 : caption.hashCode());
+        result = 31 * result + (geoLocation == null ? 0 : geoLocation.hashCode());
+        result = 31 * result + (title == null ? 0 : title.hashCode());
+        result = 31 * result + (license == null ? 0 : license.hashCode());
+        return result;
     }
 }

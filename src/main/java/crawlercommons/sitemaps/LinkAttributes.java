@@ -17,6 +17,7 @@ package crawlercommons.sitemaps;
 
 import java.net.URL;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Data model for Google extension to the sitemap protocol regarding alternate links indexing.
@@ -60,25 +61,27 @@ public class LinkAttributes {
         if (other == null) {
             return false;
         }
-        if (other instanceof LinkAttributes) {
-            LinkAttributes that = (LinkAttributes)other;
-            if (href == null) {
-                if (that.href != null) {
-                    return false;
-                }
-            } else if (!href.equals(that.href)) {
-                return false;
-            }
-            if (params == null) {
-                if (that.params != null) {
-                    return false;
-                }
-            } else if (!params.equals(that.params)) {
-                return false;
-            }
-        } else {
+        if (!(other instanceof LinkAttributes)) {
+            return false;
+        }
+        LinkAttributes that = (LinkAttributes)other;
+        if (!Objects.equals(href, that.href)) {
+            return false;
+        }
+        if (!Objects.equals(params, that.params)) {
             return false;
         }
         return true;
     }
+
+    @Override
+    public int hashCode() {
+        int result = 37;
+
+        result = 31*result + (href == null ? 0 : href.hashCode());
+        result = 31*result + (params == null ? 0 : params.hashCode());
+
+        return result;
+    }
+
 }
