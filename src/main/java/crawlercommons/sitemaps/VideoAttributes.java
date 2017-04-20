@@ -396,32 +396,35 @@ public class VideoAttributes {
             if (other == null) {
                 return false;
             }
-            if (other instanceof VideoPrice) {
-                VideoPrice that = (VideoPrice)other;
-                if (currency == null) {
-                    if (that.currency != null) {
-                        return false;
-                    }
-                } else if (!currency.equals(that.currency)) {
-                    return false;
-                }
-                if (price != that.price) {
-                    return false;
-                }
-                if (type != that.type) {
-                    return false;
-                }
-                if (resolution == null) {
-                    if (that.resolution != null) {
-                        return false;
-                    }
-                } else if (!resolution.equals(that.resolution)) {
-                    return false;
-                }
-            } else {
+            if (!(other instanceof VideoPrice)) {
+                return false;
+            }
+            VideoPrice that = (VideoPrice)other;
+            if (!Objects.equals(currency, that.currency)) {
+                return false;
+            }
+            if (price != that.price) {
+                return false;
+            }
+            if (type != that.type) {
+                return false;
+            }
+            if (!Objects.equals(resolution, that.resolution)) {
                 return false;
             }
             return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = 37;
+
+            result = 31*result + (currency == null ? 0 : currency.hashCode());
+            result = 31*result + Float.floatToIntBits(price);
+            result = 31*result + type.hashCode();
+            result = 31*result + (resolution == null ? 0 : resolution.hashCode());
+
+            return result;
         }
     }
 
