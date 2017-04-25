@@ -171,5 +171,12 @@ public class NewsAttributes {
         return result;
     }
 
+    public boolean isValid() {
+        return name != null
+            && language != null
+            && publicationDate != null
+            && title != null;
+    }
+
     public enum NewsGenre { Blog, OpEd, Opinion, PressRelease, Satire, UserGenerated }
 }

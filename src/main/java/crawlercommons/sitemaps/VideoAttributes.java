@@ -426,6 +426,7 @@ public class VideoAttributes {
 
             return result;
         }
+
     }
 
     private VideoAttributes(){}
@@ -526,5 +527,14 @@ public class VideoAttributes {
             return false;
         }
         return true;
+    }
+
+    public boolean isValid() {
+        return thumbnailLoc != null
+            && title != null
+            && title.length() <= 100
+            && description != null
+            && description.length() <= 2048
+            && (contentLoc != null || playerLoc != null);
     }
 }

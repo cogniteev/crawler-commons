@@ -38,6 +38,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -809,14 +810,58 @@ public class SiteMapParser {
                                      ImageAttributes[] images, VideoAttributes[] videos, LinkAttributes[] links, NewsAttributes news) {
         try {
             URL url = new URL(urlStr); // Checking the URL
+            // validation: loc should be on the same domain
+            final List<String> anomalies = new ArrayList();
             boolean valid = urlIsValid(siteMap.getBaseUrl(), url.toString());
-
+            if (!valid) {
+                anomalies.add(String.format("url %s not under the base url %s", url.toExternalForm(), siteMap.getBaseUrl()));
+            }
+            // validation: at most 1000 images per loc
+            if (images != null) {
+                if (images.length > 1000) {
+                    valid = false;
+                    anomalies.add(String.format("too many image nodes associated to url %s", url.toExternalForm()));
+                }
+            }
+            // validation: all video tags must be valid
+            if (videos != null) {
+                for (VideoAttributes videoAttributes: videos) {
+                    if (!videoAttributes.isValid()) {
+                        valid = false;
+                        anomalies.add(String.format("at least a video node associated to %s is invalid", url.toExternalForm()));
+                    }
+                }
+            }
+            // validation: if alternate languages are defined, current loc should be present in the set
+            if (links != null) {
+                boolean found = false;
+                for (LinkAttributes linkAttributes: links) {
+                    found = found || linkAttributes.getHref().equals(url);
+                    if (found) {
+                        break;
+                    }
+                }
+                if (!found) {
+                    valid = false;
+                    anomalies.add(String.format("alternate links associated to %s don't specify %s within the set of alternates",
+                        url.toExternalForm()));
+                }
+            }
+            // validation: if news node is present, it must be valid
+            if (news != null) {
+                if (!news.isValid()) {
+                    valid = false;
+                    anomalies.add(String.format("news node associated to %s is not valid", url.toExternalForm()));
+                }
+            }
             if (valid || !strict) {
                 SiteMapURL sUrl = new SiteMapURL(url.toString(), lastMod, changeFreq, priority, valid, images, videos, links, news);
                 siteMap.addSiteMapUrl(sUrl);
                 LOG.debug("  {}. {}", urlIndex + 1, sUrl);
             } else {
-                LOG.warn("URL: {} is excluded from the sitemap as it is not a valid url = not under the base url: {}", url.toExternalForm(), siteMap.getBaseUrl());
+                LOG.warn(String.format("URL: %s is excluded from the sitemap as it is not valid. Anomalies: %s",
+                    url.toExternalForm(),
+                    StringUtils.join(anomalies, ", ")));
             }
         } catch (MalformedURLException e) {
             LOG.warn("Bad url: [{}]", urlStr);
