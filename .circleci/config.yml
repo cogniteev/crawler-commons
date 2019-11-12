@@ -1,0 +1,60 @@
+version: 2
+jobs:
+  tests:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    environment:
+      MAVEN_OPTS: -Xmx1024m
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "pom.xml" }}
+
+      - run: mvn dependency:go-offline
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "pom.xml" }}
+
+      - run: mvn integration-test
+
+  deploy:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    environment:
+      MAVEN_OPTS: -Xmx1024m
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "pom.xml" }}
+
+      - run: cp settings.xml ~/.m2
+
+      - run: mvn deploy -DskipTests
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "pom.xml" }}
+
+
+workflows:
+  version: 2
+  tests-and-deploy:
+    jobs:
+      - tests
+      - deploy:
+          requires:
+            - tests
+          filters:
+            branches:
+              only: master-cogniteev
