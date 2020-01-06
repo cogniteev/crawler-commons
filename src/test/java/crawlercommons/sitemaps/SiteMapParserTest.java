@@ -16,6 +16,7 @@
 
 package crawlercommons.sitemaps;
 
+import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import crawlercommons.mimetypes.MimeTypeDetectorTest;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -565,6 +567,16 @@ public class SiteMapParserTest {
         assertEquals(((SiteMap) asm).getSiteMapUrls().size(), urls.size());
     }
 
+    @Test
+    public void testUtf16() throws IOException, UnknownFormatException {
+        URL url = new URL("https://www.modz.fr/sitemap-products-1020001-1040000.xml");
+
+        SiteMapParser parser = new SiteMapParser();
+        String contentType = "text/xml";
+
+        AbstractSiteMap asm = parser.parseSiteMap(contentType, IOUtils.toByteArray(url) , UTF_16LE, url);
+    }
+
     /**
      * Returns a good simple default XML sitemap as a byte array
      */
@@ -594,6 +606,10 @@ public class SiteMapParserTest {
         File file = new File(resourceName);
         InputStream is = new FileInputStream(file);
         return IOUtils.toByteArray(is);
+    }
+
+    private byte[] getSitemap(String filename) throws IOException {
+        return IOUtils.toByteArray(MimeTypeDetectorTest.class.getResourceAsStream("/sitemaps/" + filename));
     }
 
     private static String[] SITEMAP_URLS = { "http://www.example.com/", //

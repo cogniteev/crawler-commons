@@ -24,9 +24,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +43,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
@@ -276,7 +280,7 @@ public class SiteMapParser {
      * Note that contentType is assumed to be correct; in general it is more
      * robust to use the method that doesn't take a contentType, but instead
      * detects this using Tika.
-     * 
+     *
      * @param contentType
      *            MIME type of content
      * @param content
@@ -291,20 +295,45 @@ public class SiteMapParser {
      *             {@link java.net.URL}
      */
     public AbstractSiteMap parseSiteMap(String contentType, byte[] content, URL url) throws UnknownFormatException, IOException {
+        return parseSiteMap(contentType, content, null, url);
+    }
+
+    /**
+     * Parse a sitemap, given the MIME type, the content bytes, and the URL.
+     * Note that contentType is assumed to be correct; in general it is more
+     * robust to use the method that doesn't take a contentType, but instead
+     * detects this using Tika.
+     * 
+     * @param contentType
+     *            MIME type of content
+     * @param content
+     *            raw bytes of sitemap file
+     * @param charset
+     *            charset used by raw bytes
+     * @param url
+     *            URL to sitemap file
+     * @return Extracted SiteMap/SiteMapIndex
+     * @throws UnknownFormatException
+     *             if there is an error parsing the sitemap
+     * @throws IOException
+     *             if there is an error reading in the site map
+     *             {@link java.net.URL}
+     */
+    public AbstractSiteMap parseSiteMap(String contentType, byte[] content, Charset charset, URL url) throws UnknownFormatException, IOException {
         String mimeType = mimeTypeDetector.normalize(contentType, content);
 
         String msg;
         if (mimeTypeDetector.isXml(mimeType)) {
-            return processXml(url, content);
+            return processXml(url, getInputSource(content, charset));
         } else if (mimeTypeDetector.isText(mimeType)) {
-            return processText(url, content);
+            return processText(url, new BufferedReader(getReader(new ByteArrayInputStream(content), charset)));
         } else if (mimeTypeDetector.isGzip(mimeType)) {
             try (InputStream decompressed = new BufferedInputStream(new GZIPInputStream(new ByteArrayInputStream(content)))) {
                 String compressedType = mimeTypeDetector.detect(decompressed);
                 if (mimeTypeDetector.isXml(compressedType)) {
-                    return processGzippedXML(url, content);
+                    return processGzippedXML(url, content, charset);
                 } else if (mimeTypeDetector.isText(compressedType)) {
-                    return processText(url, decompressed);
+                    return processText(url, new BufferedReader(getReader(decompressed, charset)));
                 } else if (compressedType == null) {
                     msg = String.format(Locale.ROOT, "Failed to detect embedded MediaType of gzipped sitemap '%s'", url);
                 } else {
@@ -407,12 +436,7 @@ public class SiteMapParser {
      *             if there is an error parsing the sitemap
      */
     protected AbstractSiteMap processXml(URL sitemapUrl, byte[] xmlContent) throws UnknownFormatException {
-
-        BOMInputStream bomIs = new BOMInputStream(new ByteArrayInputStream(xmlContent));
-        InputSource is = new InputSource();
-        is.setCharacterStream(new BufferedReader(new InputStreamReader(bomIs, UTF_8)));
-
-        return processXml(sitemapUrl, is);
+        return processXml(sitemapUrl, getInputSource(xmlContent, null));
     }
 
     /**
@@ -444,14 +468,28 @@ public class SiteMapParser {
      *             if there is an error reading in the site map content
      */
     protected SiteMap processText(URL sitemapUrl, InputStream stream) throws IOException {
+        BOMInputStream bomIs = new BOMInputStream(stream);
+        @SuppressWarnings("resource")
+        BufferedReader reader = new BufferedReader(new InputStreamReader(bomIs, UTF_8));
+
+        return processText(sitemapUrl, reader);
+    }
+
+    /**
+     * Process a text-based Sitemap. Text sitemaps only list URLs but no
+     * priorities, last mods, etc.
+     *
+     * @param sitemapUrl
+     *            URL to sitemap file
+     * @return The site map
+     * @throws IOException
+     *             if there is an error reading in the site map content
+     */
+    private SiteMap processText(URL sitemapUrl, BufferedReader reader) throws IOException {
         LOG.debug("Processing textual Sitemap");
 
         SiteMap textSiteMap = new SiteMap(sitemapUrl);
         textSiteMap.setType(SitemapType.TEXT);
-
-        BOMInputStream bomIs = new BOMInputStream(stream);
-        @SuppressWarnings("resource")
-        BufferedReader reader = new BufferedReader(new InputStreamReader(bomIs, UTF_8));
 
         String line;
         int i = 0;
@@ -493,17 +531,30 @@ public class SiteMapParser {
      *             if there is an error reading in the gzip {@link java.net.URL}
      */
     protected AbstractSiteMap processGzippedXML(URL url, byte[] response) throws IOException, UnknownFormatException {
+        return processGzippedXML(url, response, null);
+    }
 
+    /**
+     * Decompress the gzipped content and process the resulting XML Sitemap.
+     *
+     * @param url
+     *            - URL of the gzipped content
+     * @param response
+     *            - Gzipped content
+     * @return the site map
+     * @throws UnknownFormatException
+     *             if there is an error parsing the gzip
+     * @throws IOException
+     *             if there is an error reading in the gzip {@link java.net.URL}
+     */
+    private AbstractSiteMap processGzippedXML(URL url, byte[] response, Charset charset) throws IOException, UnknownFormatException {
         LOG.debug("Processing gzipped XML");
-
-        InputStream is = new ByteArrayInputStream(response);
 
         // Remove .gz ending
         String xmlUrl = url.toString().replaceFirst("\\.gz$", "");
         LOG.debug("XML url = {}", xmlUrl);
 
-        BOMInputStream decompressed = new BOMInputStream(new GZIPInputStream(is));
-        InputSource in = new InputSource(decompressed);
+        InputSource in = getInputSource(new GZIPInputStream(new ByteArrayInputStream(response)), charset);
         in.setSystemId(xmlUrl);
         return processXml(url, in);
     }
@@ -584,6 +635,50 @@ public class SiteMapParser {
         } catch (ParserConfigurationException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private InputSource getInputSource(byte[] content, Charset charset) throws UnknownFormatException {
+        return getInputSource(new ByteArrayInputStream(content), charset);
+    }
+
+    private InputSource getInputSource(InputStream in, Charset charset) throws UnknownFormatException {
+        InputSource is = new InputSource();
+        is.setCharacterStream(getReader(in, charset));
+        return is;
+    }
+
+    private Reader getReader(InputStream is, Charset charset) throws UnknownFormatException {
+        if (!(is instanceof BOMInputStream)) {
+            is = new BOMInputStream(
+                    is,
+                    ByteOrderMark.UTF_8,
+                    ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_16BE,
+                    ByteOrderMark.UTF_32LE, ByteOrderMark.UTF_32BE
+            );
+        }
+
+        if (charset == null) {
+            String charsetName;
+            try {
+                charsetName = ((BOMInputStream) is).getBOMCharsetName();
+            } catch (IOException e) {
+                throw new UnknownFormatException("Exception caught while getting charset name", e);
+            }
+
+            if (charsetName != null) {
+                try {
+                    charset = Charset.forName(charsetName);
+                } catch (UnsupportedCharsetException e) {
+                    throw new UnknownFormatException("Exception caught while getting charset name", e);
+                }
+            }
+
+            if (charset == null) {
+                charset = UTF_8;
+            }
+        }
+
+        return new InputStreamReader(is, charset);
     }
 
     /**
