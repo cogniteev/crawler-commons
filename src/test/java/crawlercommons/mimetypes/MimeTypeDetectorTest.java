@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -79,6 +80,13 @@ public class MimeTypeDetectorTest {
         assertFalse(detector.isXml(mimeType));
         assertTrue(detector.isText(mimeType));
         assertFalse(detector.isGzip(mimeType));
+    }
+
+    @Test
+    public void testNormalizeContentTypeWithCharset() throws IOException {
+        MimeTypeDetector detector = new MimeTypeDetector();
+
+        assertEquals("application/xml", detector.normalize("text/xml; charset=utf-16", null));
     }
 
     private byte[] getSitemap(String filename) throws IOException {
