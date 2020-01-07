@@ -1,11 +1,13 @@
 package crawlercommons.mimetypes;
 
-import static org.junit.Assert.*;
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
 
 import java.io.IOException;
 
-import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MimeTypeDetectorTest {
 
@@ -78,6 +80,13 @@ public class MimeTypeDetectorTest {
         assertFalse(detector.isXml(mimeType));
         assertTrue(detector.isText(mimeType));
         assertFalse(detector.isGzip(mimeType));
+    }
+
+    @Test
+    public void testNormalizeContentTypeWithCharset() throws IOException {
+        MimeTypeDetector detector = new MimeTypeDetector();
+
+        assertEquals("application/xml", detector.normalize("text/xml; charset=utf-16", null));
     }
 
     private byte[] getSitemap(String filename) throws IOException {
