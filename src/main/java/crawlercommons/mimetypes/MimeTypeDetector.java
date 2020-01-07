@@ -206,7 +206,8 @@ public class MimeTypeDetector {
     }
 
     public String normalize(String contentType, byte[] content) {
-        String normalizedContentType = contentType.toLowerCase(Locale.ROOT);
+        String normalizedContentType = normalizeContentType(contentType);
+
         for (String[] mimeTypes : MIMETYPES) {
             for (String mimeType : mimeTypes) {
                 if (normalizedContentType.equals(mimeType)) {
@@ -215,12 +216,18 @@ public class MimeTypeDetector {
             }
         }
 
-        String result = detect(content);
-        if (result != null) {
-            return result;
-        }
-
-        return null;
+        return detect(content);
     }
 
+    private String normalizeContentType(String contentType) {
+        contentType = contentType.toLowerCase(Locale.ROOT);
+
+        // "text/html; charset=utf-8" => "text/html"
+        int sep = contentType.indexOf(';');
+        if (sep != -1) {
+            contentType = contentType.substring(0, sep);
+        }
+
+        return contentType;
+    }
 }
