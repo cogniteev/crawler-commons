@@ -5,7 +5,7 @@
 	<artifactId>crawler-commons</artifactId>
 	<name>Crawler-commons</name>
 	<packaging>jar</packaging>
-	<version>0.12-COGNITEEV</version>
+	<version>0.12.1-COGNITEEV</version>
 	<licenses>
 		<license>
 			<name>Apache License, Version 2.0</name>
