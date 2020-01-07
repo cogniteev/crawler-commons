@@ -622,8 +622,8 @@ public class SiteMapParser {
 
                     for (Charset checkCharset : new Charset[] { StandardCharsets.UTF_16BE, StandardCharsets.UTF_16LE }) {
                         if (selectedCharset == null) {
-                            String xmlStart = new String(head, 0, read, checkCharset).toLowerCase();
-                            if (xmlStart.startsWith("<?xml")) {
+                            String xmlStart = new String(head, 0, read, checkCharset);
+                            if (xmlStart.startsWith("<?xml") || xmlStart.startsWith("<?XML")) {
                                 selectedCharset = checkCharset;
                             }
                         }
