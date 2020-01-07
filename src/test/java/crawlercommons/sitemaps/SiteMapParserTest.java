@@ -669,6 +669,16 @@ public class SiteMapParserTest {
         assertEquals(((SiteMap) asm).getSiteMapUrls().size(), urls.size());
     }
 
+    @Test
+    public void testUtf16() throws IOException, UnknownFormatException {
+        URL url = new URL("https://www.modz.fr/sitemap-products-1020001-1040000.xml");
+
+        SiteMapParser parser = new SiteMapParser();
+        String contentType = "text/xml; charset=utf-16";
+
+        AbstractSiteMap asm = parser.parseSiteMap(contentType, IOUtils.toByteArray(url), url);
+    }
+
     /**
      * @return good simple default XML sitemap as UTF-8 encoded byte array
      */
