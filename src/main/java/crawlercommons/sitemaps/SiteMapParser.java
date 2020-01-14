@@ -268,13 +268,7 @@ public class SiteMapParser {
         if (url == null) {
             return null;
         }
-
-        String contentType = mimeTypeDetector.detect(content);
-        if (contentType == null) {
-            String msg = String.format(Locale.ROOT, "Failed to detect MediaType of sitemap '%s'", url);
-            throw new UnknownFormatException(msg);
-        }
-        return parseSiteMap(contentType, content, url);
+        return parseSiteMap(null, content, url);
     }
 
     /**
@@ -297,6 +291,15 @@ public class SiteMapParser {
      *             {@link java.net.URL}
      */
     public AbstractSiteMap parseSiteMap(String contentType, byte[] content, URL url) throws UnknownFormatException, IOException {
+        if (contentType == null) {
+            contentType = mimeTypeDetector.detect(content);
+        }
+
+        if (contentType == null) {
+            String msg = String.format(Locale.ROOT, "Failed to detect MediaType of sitemap '%s'", url);
+            throw new UnknownFormatException(msg);
+        }
+
         String mimeType = mimeTypeDetector.normalize(contentType, content);
 
         String msg;
