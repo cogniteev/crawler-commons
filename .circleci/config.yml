@@ -37,9 +37,13 @@ jobs:
           keys:
           - v1-dependencies-{{ checksum "pom.xml" }}
 
-      - run: cp settings.xml ~/.m2
-
-      - run: mvn deploy -DskipTests
+      - run:
+          name: Setup GCP auth
+          command: |
+            echo $GCP_AUTH > service_account.json
+            echo 'export GOOGLE_APPLICATION_CREDENTIALS=service_account.json' >> $BASH_ENV
+            source $BASH_ENV
+            mvn deploy -DskipTests
 
       - save_cache:
           paths:
@@ -53,6 +57,8 @@ workflows:
     jobs:
       - tests
       - deploy:
+          context:
+            - gcloud
           requires:
             - tests
           filters:
