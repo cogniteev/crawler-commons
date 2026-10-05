@@ -4,6 +4,7 @@ Fork 1.6-cogniteev
 - [Sitemaps] Normalize content-types that include a charset parameter
 - [Sitemaps] Parse UTF-16 XML sitemaps, including input without a BOM, and accept a null content type
 - [Sitemaps] applyMaxUrls() opts XML sitemaps, indexes, and feeds into the same 50,000 URL limit as text sitemaps
+- Publish com.cogniteev:crawler-commons:1.6-cogniteev from GitHub Actions
 
 Release 1.6 (2025-12-04)
 - Support IDNA2008 Unicode domains by using ALLOW_UNASSIGNED in IDN methods within TldFinder / Normalizer. (Richard Zowalla, sebastian-nagel) #551, #552
