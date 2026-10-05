@@ -29,6 +29,9 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,12 +40,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
@@ -333,12 +339,7 @@ public class SiteMapParser {
             return null;
         }
 
-        String contentType = mimeTypeDetector.detect(content);
-        if (contentType == null) {
-            String msg = String.format(Locale.ROOT, "Failed to detect MediaType of sitemap '%s'", url);
-            throw new UnknownFormatException(msg);
-        }
-        return parseSiteMap(contentType, content, url);
+        return parseSiteMap(null, content, url);
     }
 
     /**
@@ -361,11 +362,20 @@ public class SiteMapParser {
      *             {@link java.net.URL}
      */
     public AbstractSiteMap parseSiteMap(String contentType, byte[] content, URL url) throws UnknownFormatException, IOException {
+        if (contentType == null) {
+            contentType = mimeTypeDetector.detect(content);
+        }
+
+        if (contentType == null) {
+            String msg = String.format(Locale.ROOT, "Failed to detect MediaType of sitemap '%s'", url);
+            throw new UnknownFormatException(msg);
+        }
+
         String mimeType = mimeTypeDetector.normalize(contentType, content);
 
         String msg;
         if (mimeTypeDetector.isXml(mimeType)) {
-            return processXml(url, content);
+            return processXml(url, getInputSourceForXml(contentType, new ByteArrayInputStream(content)));
         } else if (mimeTypeDetector.isText(mimeType)) {
             return processText(url, content);
         } else if (mimeTypeDetector.isGzip(mimeType)) {
@@ -477,12 +487,7 @@ public class SiteMapParser {
      *             if there is an error parsing the sitemap
      */
     protected AbstractSiteMap processXml(URL sitemapUrl, byte[] xmlContent) throws UnknownFormatException {
-
-        InputStream in = new SkipLeadingWhiteSpaceInputStream(new BOMInputStream(new ByteArrayInputStream(xmlContent)));
-        InputSource is = new InputSource();
-        is.setCharacterStream(new BufferedReader(new InputStreamReader(in, UTF_8)));
-
-        return processXml(sitemapUrl, is);
+        return processXml(sitemapUrl, getInputSourceForXml(null, new ByteArrayInputStream(xmlContent)));
     }
 
     /**
@@ -577,8 +582,7 @@ public class SiteMapParser {
         String xmlUrl = url.toString().replaceFirst("\\.gz$", "");
         LOG.debug("XML url = {}", xmlUrl);
 
-        InputStream decompressed = new SkipLeadingWhiteSpaceInputStream(new BOMInputStream(new GZIPInputStream(is)));
-        InputSource in = new InputSource(decompressed);
+        InputSource in = getInputSourceForXml(null, new GZIPInputStream(is));
         in.setSystemId(xmlUrl);
         return processXml(url, in);
     }
@@ -667,6 +671,90 @@ public class SiteMapParser {
         } catch (ParserConfigurationException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private InputSource getInputSourceForXml(String contentType, InputStream xmlContent) throws UnknownFormatException {
+        BOMInputStream bomIs = new BOMInputStream(xmlContent, ByteOrderMark.UTF_8, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_32LE, ByteOrderMark.UTF_32BE);
+
+        Charset charset = null;
+
+        try {
+            String bomCharsetName = bomIs.getBOMCharsetName();
+            if (bomCharsetName != null) {
+                charset = Charset.forName(bomCharsetName);
+            }
+        } catch (IOException | UnsupportedCharsetException e) {
+            throw new UnknownFormatException("Exception caught while getting charset name");
+        }
+
+        InputStream sanitizedIs = new SkipLeadingWhiteSpaceInputStream(bomIs);
+
+        if (charset == null) {
+            charset = contentTypeCharset(contentType);
+
+            try {
+                if (charset == StandardCharsets.UTF_16) {
+                    byte[] head = new byte[16];
+                    int read = readAhead(head, sanitizedIs);
+
+                    // specified as 'UTF-16' by content type but no BOM was present
+                    // since we expect '<?xml' at the beginning let's use that to detect
+                    // if we are using LE or BE
+
+                    Charset selectedCharset = null;
+
+                    for (Charset checkCharset : new Charset[] { StandardCharsets.UTF_16BE, StandardCharsets.UTF_16LE }) {
+                        if (selectedCharset == null) {
+                            String xmlStart = new String(head, 0, read, checkCharset);
+                            if (xmlStart.startsWith("<?xml") || xmlStart.startsWith("<?XML")) {
+                                selectedCharset = checkCharset;
+                            }
+                        }
+                    }
+
+                    if (selectedCharset != null) {
+                        charset = selectedCharset;
+                    }
+                }
+            } catch (IOException e) {
+                throw new UnknownFormatException("Exception caught while getting charset name");
+            }
+        }
+
+        if (charset == null) {
+            charset = UTF_8;
+        }
+
+        InputSource is = new InputSource();
+        is.setCharacterStream(new BufferedReader(new InputStreamReader(sanitizedIs, charset)));
+        return is;
+    }
+
+    private int readAhead(byte[] collector, InputStream is) throws IOException {
+        is.mark(collector.length);
+        try {
+            return is.read(collector, 0, collector.length);
+        } finally {
+            is.reset();
+        }
+    }
+
+    private static final Pattern contentTypeCharsetPattern = Pattern.compile("(?i)\\bcharset\\s*=[\\s\"']*([^\\s,;\"']+)");
+
+    static Charset contentTypeCharset(CharSequence contentType) {
+        if (contentType == null) {
+            return null;
+        }
+
+        Matcher matcher = contentTypeCharsetPattern.matcher(contentType);
+        if (matcher.find()) {
+            try {
+                return Charset.forName(matcher.group(1));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**

@@ -33,6 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
@@ -846,6 +847,43 @@ public class SiteMapParserTest {
 
         parser.walkSiteMap(asm, urls::add);
         assertEquals(((SiteMap) asm).getSiteMapUrls().size(), urls.size());
+    }
+
+    @Test
+    public void testParseSiteMapWithNullContentType() throws UnknownFormatException, IOException, URISyntaxException {
+        SiteMapParser parser = new SiteMapParser();
+        byte[] content = getXMLSitemapAsBytes();
+        URL url = new URI("http://www.example.com/sitemap.xml").toURL();
+
+        AbstractSiteMap asm = parser.parseSiteMap(null, content, url);
+        assertEquals(5, ((SiteMap) asm).getSiteMapUrls().size());
+    }
+
+    @Test
+    public void testUtf16WithoutBom() throws UnknownFormatException, IOException, URISyntaxException {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n" + "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + " <url><loc>http://www.example.com/</loc></url>\n" + "</urlset>";
+        URL url = new URI("http://www.example.com/sitemap.xml").toURL();
+        SiteMapParser parser = new SiteMapParser();
+
+        for (Charset charset : new Charset[] { StandardCharsets.UTF_16BE, StandardCharsets.UTF_16LE }) {
+            AbstractSiteMap asm = parser.parseSiteMap("text/xml; charset=utf-16", xml.getBytes(charset), url);
+            assertEquals(1, ((SiteMap) asm).getSiteMapUrls().size());
+            assertEquals("http://www.example.com/", ((SiteMap) asm).getSiteMapUrls().iterator().next().getUrl().toString());
+        }
+    }
+
+    @Test
+    public void testUtf16Bom() throws UnknownFormatException, IOException, URISyntaxException {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n" + "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + " <url><loc>http://www.example.com/</loc></url>\n" + "</urlset>";
+        byte[] encoded = xml.getBytes(StandardCharsets.UTF_16BE);
+        byte[] content = new byte[encoded.length + 2];
+        content[0] = (byte) 0xFE;
+        content[1] = (byte) 0xFF;
+        System.arraycopy(encoded, 0, content, 2, encoded.length);
+
+        URL url = new URI("http://www.example.com/sitemap.xml").toURL();
+        AbstractSiteMap asm = new SiteMapParser().parseSiteMap("text/xml", content, url);
+        assertEquals(1, ((SiteMap) asm).getSiteMapUrls().size());
     }
 
     /**
