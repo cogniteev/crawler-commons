@@ -210,7 +210,7 @@ public class MimeTypeDetector {
     }
 
     public String normalize(String contentType, byte[] content) {
-        String normalizedContentType = contentType.toLowerCase(Locale.ROOT);
+        String normalizedContentType = normalizeContentType(contentType);
         for (String[] mimeTypes : MIMETYPES) {
             for (String mimeType : mimeTypes) {
                 if (normalizedContentType.equals(mimeType)) {
@@ -225,6 +225,21 @@ public class MimeTypeDetector {
         }
 
         return null;
+    }
+
+    /**
+     * Strip parameters such as {@code charset} so {@code text/xml; charset=utf-16}
+     * matches the known {@code text/xml} type.
+     */
+    private String normalizeContentType(String contentType) {
+        contentType = contentType.toLowerCase(Locale.ROOT);
+
+        int sep = contentType.indexOf(';');
+        if (sep != -1) {
+            contentType = contentType.substring(0, sep).trim();
+        }
+
+        return contentType;
     }
 
 }
