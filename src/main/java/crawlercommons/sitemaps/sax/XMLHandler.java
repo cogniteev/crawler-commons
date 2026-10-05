@@ -186,6 +186,7 @@ class XMLHandler extends DelegatorHandler {
                 sUrl.setPriority(priority);
                 sitemap.addSiteMapUrl(sUrl);
                 LOG.debug("  {}. {}", (++i), sUrl);
+                addedEntry();
                 if (extensionHandlers != null) {
                     for (Entry<Extension, ExtensionHandler> e : extensionHandlers.entrySet()) {
                         sUrl.addAttributesForExtension(e.getKey(), e.getValue().getAttributes());

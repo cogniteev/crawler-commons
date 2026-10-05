@@ -182,6 +182,7 @@ class RSSHandler extends DelegatorHandler {
                 SiteMapURL sUrl = new SiteMapURL(locURL, valid);
                 sUrl.setLastModified(lastMod);
                 sitemap.addSiteMapUrl(sUrl);
+                addedEntry();
             }
         }
         locURL = null;

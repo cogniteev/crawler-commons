@@ -119,6 +119,13 @@ public class SiteMapParser {
     private Function<String, String> urlFilter = (String url) -> url;
 
     /**
+     * When true, XML sitemaps, indexes, and feeds stop after {@link #MAX_URLS}
+     * entries, the same cap text sitemaps always use. False by default, so XML
+     * parsing stays lenient until {@link #applyMaxUrls()} is called.
+     */
+    private boolean applyMaxUrls;
+
+    /**
      * SiteMapParser with strict location validation ({@link #isStrict()}) and not
      * allowing partially parsed content.
      */
@@ -264,6 +271,15 @@ public class SiteMapParser {
      */
     public void setURLFilter(URLFilter filter) {
         urlFilter = filter::filter;
+    }
+
+    /**
+     * Stop XML sitemaps, sitemap indexes, RSS feeds, and Atom feeds after
+     * {@link #MAX_URLS} entries, the same limit text sitemaps already use.
+     * Without this call, XML parsing stays lenient and keeps every entry.
+     */
+    public void applyMaxUrls() {
+        this.applyMaxUrls = true;
     }
 
     /**
@@ -631,6 +647,9 @@ public class SiteMapParser {
         }
         handler.setExtensionNamespaces(extensionNamespaces);
         handler.setURLFilter(urlFilter);
+        if (applyMaxUrls) {
+            handler.applyMaxUrls(MAX_URLS);
+        }
 
         try {
             SAXParser saxParser = factory.newSAXParser();
@@ -657,6 +676,10 @@ public class SiteMapParser {
             ufe.initCause(e);
             throw ufe;
         } catch (SAXException e) {
+            AbstractSiteMap limited = sitemapLimitedToMaxUrls(handler, e);
+            if (limited != null) {
+                return limited;
+            }
             LOG.warn("Error parsing sitemap {}: {}", sitemapUrl, e.getMessage());
             AbstractSiteMap sitemap = handler.getSiteMap();
             if (allowPartial && sitemap != null) {
@@ -668,9 +691,28 @@ public class SiteMapParser {
                 ufe.initCause(e);
                 throw ufe;
             }
+        } catch (RuntimeException e) {
+            AbstractSiteMap limited = sitemapLimitedToMaxUrls(handler, e);
+            if (limited != null) {
+                return limited;
+            }
+            throw e;
         } catch (ParserConfigurationException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private AbstractSiteMap sitemapLimitedToMaxUrls(DelegatorHandler handler, Throwable error) {
+        if (!DelegatorHandler.isMaxUrlsReached(error)) {
+            return null;
+        }
+        AbstractSiteMap sitemap = handler.getSiteMap();
+        if (sitemap == null) {
+            return null;
+        }
+        LOG.info("Stopped parsing sitemap {} after {} entries", sitemap.getUrl(), MAX_URLS);
+        sitemap.setProcessed(true);
+        return sitemap;
     }
 
     private InputSource getInputSourceForXml(String contentType, InputStream xmlContent) throws UnknownFormatException {

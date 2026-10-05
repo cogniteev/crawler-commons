@@ -886,6 +886,30 @@ public class SiteMapParserTest {
         assertEquals(1, ((SiteMap) asm).getSiteMapUrls().size());
     }
 
+    @Test
+    public void testApplyMaxUrls() throws UnknownFormatException, IOException, URISyntaxException {
+        final int textLimit = 50000;
+        StringBuilder xml = new StringBuilder(textLimit * 60);
+        xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+        for (int i = 0; i < textLimit + 1; i++) {
+            xml.append(" <url><loc>http://www.example.com/p").append(i).append("</loc></url>\n");
+        }
+        xml.append("</urlset>");
+        byte[] content = xml.toString().getBytes(UTF_8);
+        URL url = new URI("http://www.example.com/sitemap.xml").toURL();
+
+        SiteMap unlimited = (SiteMap) new SiteMapParser().parseSiteMap("text/xml", content, url);
+        assertEquals(textLimit + 1, unlimited.getSiteMapUrls().size());
+
+        SiteMapParser parser = new SiteMapParser();
+        parser.applyMaxUrls();
+        SiteMap limited = (SiteMap) parser.parseSiteMap("text/xml", content, url);
+        assertTrue(limited.isProcessed());
+        assertEquals(textLimit, limited.getSiteMapUrls().size());
+        assertEquals("http://www.example.com/p0", limited.getSiteMapUrls().iterator().next().getUrl().toString());
+    }
+
     /**
      * @return good simple default XML sitemap as UTF-8 encoded byte array
      */

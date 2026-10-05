@@ -147,6 +147,7 @@ class AtomHandler extends DelegatorHandler {
                 SiteMapURL sUrl = new SiteMapURL(urlFiltered, lastMod, null, null, valid);
                 sitemap.addSiteMapUrl(sUrl);
                 LOG.debug("  {}. {}", (++i), sUrl);
+                addedEntry();
             }
         }
         loc = null;

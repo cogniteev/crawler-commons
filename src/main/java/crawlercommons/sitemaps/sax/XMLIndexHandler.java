@@ -145,6 +145,7 @@ class XMLIndexHandler extends DelegatorHandler {
             SiteMap s = new SiteMap(locURL, lastMod);
             sitemap.addSitemap(s);
             LOG.debug("  {}. {}", (i + 1), s);
+            addedEntry();
         } catch (IllegalArgumentException | MalformedURLException | URISyntaxException e) {
             LOG.trace("Don't create an entry with a bad URL", e);
             LOG.debug("Bad url: [{}]", value);

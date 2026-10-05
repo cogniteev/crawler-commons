@@ -51,6 +51,9 @@ public class DelegatorHandler extends DefaultHandler {
     protected Map<String, Extension> extensionNamespaces;
     private StringBuilder characterBuffer = new StringBuilder();
     protected Function<String, String> urlFilter = (String url) -> url;
+    /** {@code <= 0} means unlimited. Set from {@link crawlercommons.sitemaps.SiteMapParser#applyMaxUrls()}. */
+    private int maxUrls;
+    private int acceptedEntries;
 
     protected DelegatorHandler(LinkedList<String> elementStack, boolean strict) {
         this.elementStack = elementStack;
@@ -102,6 +105,44 @@ public class DelegatorHandler extends DefaultHandler {
         this.urlFilter = urlFilter;
     }
 
+    public void applyMaxUrls(int maxUrls) {
+        this.maxUrls = maxUrls;
+    }
+
+    /**
+     * Count one stored entry and stop parsing once the text-sitemap URL cap
+     * has been reached. Unlimited when {@code maxUrls <= 0}.
+     */
+    protected void addedEntry() {
+        if (maxUrls > 0 && ++acceptedEntries >= maxUrls) {
+            throw new MaxUrlsReachedException();
+        }
+    }
+
+    public static boolean isMaxUrlsReached(Throwable error) {
+        while (error != null) {
+            if (error instanceof MaxUrlsReachedException) {
+                return true;
+            }
+            Throwable next = null;
+            if (error instanceof SAXException) {
+                next = ((SAXException) error).getException();
+            }
+            if (next == null) {
+                next = error.getCause();
+            }
+            if (next == error) {
+                break;
+            }
+            error = next;
+        }
+        return false;
+    }
+
+    private static final class MaxUrlsReachedException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+    }
+
     protected void setException(UnknownFormatException exception) {
         this.exception = exception;
     }
@@ -145,6 +186,7 @@ public class DelegatorHandler extends DefaultHandler {
             return;
         }
         // configure delegate
+        delegate.applyMaxUrls(maxUrls);
         delegate.setStrictNamespace(isStrictNamespace());
         delegate.setAcceptedNamespaces(acceptedNamespaces);
         // validate XML namespace
